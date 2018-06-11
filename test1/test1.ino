@@ -10,6 +10,10 @@ NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 SoftwareSerial miSerial(2,3);//Rx, Tx
 DHT dht(9, 22);
 
+char Nombre[21]= "HC-06 Andrea";
+char BPS = '4'; //1 = 1200, 2= 2400, 3 = 4800, 4= 9600, 5= 19200, 6=38400
+char password[5]= "6952";
+
 int i, a=0, automovil = 0;
 int valor1, valor2;
 
@@ -20,7 +24,7 @@ const byte IN2pin = 5; // terminales de entrada del puente h (para controlar el 
 const byte IN3pin = 6;
 const byte IN4pin = 7;
 
-int POT = 100;
+int POT = 80;
 
 void pausa()
 {
@@ -35,7 +39,8 @@ void pausa()
 
 void setup() 
 {
-  Serial.begin(115200);
+  Serial.begin(9600);
+  miSerial.begin(9600);
   pinMode(IN1pin,OUTPUT);
   pinMode(IN2pin,OUTPUT);
   pinMode(pinVelocidad,OUTPUT);
@@ -48,54 +53,70 @@ void setup()
   pinMode(9, OUTPUT);
   pinMode(A0, INPUT);
   dht.begin();
+  miSerial.print("AT");
+  miSerial.print("AT+BAUD");
+  miSerial.print(BPS);
+  miSerial.print("AT+NAME");
+  miSerial.print(Nombre);
+  miSerial.print("AT+PIN");
+  miSerial.print(password);
 }
 
 void loop() 
 {
   valor1 = analogRead(A0);
-    float h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
+  float h = dht.readHumidity();
   float t = dht.readTemperature();
-  Serial.print("Humidity: ");
-  Serial.println(h);
-  Serial.print("Temperature: ");
-  Serial.println(t);
-  delay(1000);
+  //Serial.print("Humidity: ");
+  //Serial.println(h);
+  //Serial.print("Temperature: ");
+  //Serial.println(t);
+  if(miSerial.available())
+  {
+    String c = miSerial.readString();
+    int b = c[0];
+    Serial.println(c);
   if(automovil == 0)
   {
     sonar.ping_cm();
-    if(sonar.ping_cm()>13)
+    if(b == '1')
     {
-      digitalWrite(IN1pin,LOW);
-      digitalWrite(IN2pin,HIGH);
-      digitalWrite(IN3pin,LOW);
-      digitalWrite(IN4pin,HIGH);
+      digitalWrite(IN1pin,HIGH);
+      digitalWrite(IN2pin,LOW);
+      digitalWrite(IN3pin,HIGH);
+      digitalWrite(IN4pin,LOW);
     }
-    else if(sonar.ping_cm()<12)
+    else if(b == '0')
     {
       digitalWrite(IN1pin,LOW);
       digitalWrite(IN2pin,LOW);
       digitalWrite(IN3pin,LOW);
       digitalWrite(IN4pin,LOW);
     }
-    else if(a == 1)
+    else if(b == '2')
     {
       digitalWrite(IN1pin,HIGH);
       digitalWrite(IN2pin,LOW);
       digitalWrite(IN3pin,LOW);
       digitalWrite(IN4pin,LOW);
     }
-    else
+    else if(b == '3')
     {
       digitalWrite(IN1pin,LOW);
       digitalWrite(IN2pin,LOW);
-      digitalWrite(IN3pin,LOW);
+      digitalWrite(IN3pin,HIGH);
       digitalWrite(IN4pin,LOW);
+    }
+    else if(b == '4')
+    {
+      digitalWrite(IN1pin,LOW);
+      digitalWrite(IN2pin,HIGH);
+      digitalWrite(IN3pin,LOW);
+      digitalWrite(IN4pin,HIGH);      
     }
     analogWrite(pinVelocidad,POT);
     analogWrite(pinVelocidad2,POT);
-  }
-  if(automovil == 1)
+  if(b == '9')
   {
     valor1 = analogRead(A0);
     valor2 = analogRead(1);
@@ -121,5 +142,6 @@ void loop()
       digitalWrite(IN4pin,LOW);
     }
   }
+  }
+  }
 }
-    
